@@ -68,21 +68,18 @@ export const useBuilderStore = create<BuilderState>((set) => ({
                 },
             ],
         })),
-
     updatePosition: (id, x, y) =>
         set((state) => ({
             fields: state.fields.map((f) =>
                 f.id === id ? { ...f, x, y } : f
             ),
         })),
-
     updateStyle: (id, style) =>
         set((state) => ({
             fields: state.fields.map((f) =>
                 f.id === id ? { ...f, ...style } : f
             ),
         })),
-
     updateText: (id, text) =>
         set((state) => ({
             fields: state.fields.map((f) =>
