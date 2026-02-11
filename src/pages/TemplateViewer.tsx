@@ -78,6 +78,7 @@ export function TemplateViewer() {
         }, data);
     };
 
+
     return (
         <div className="min-h-screen bg-gray-100 flex justify-center p-10">
             <div className="relative w-[595px] h-[842px] bg-white shadow">
@@ -114,9 +115,14 @@ export function TemplateViewer() {
                                     wordBreak: 'break-word',
                                 }}
                             >
-                                {f.binding
-                                    ? getValueFromBinding(f.binding)
-                                    : f.text}
+                                {(() => {
+                                    const value = getValueFromBinding(f.binding);
+                                    const displayText = f.binding
+                                        ? value || f.text
+                                        : f.text;
+
+                                    return displayText;
+                                })()}
                             </div>
                         )}
                     </div>

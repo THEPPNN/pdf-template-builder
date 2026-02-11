@@ -16,7 +16,7 @@ export type TextField = {
     fontFamily: 'sans' | 'serif' | 'mono';
     width: number;
     textAlign: 'left' | 'center' | 'right';
-
+    
     binding?: string; // เช่น "customer.name" หรือ "invoice.date"
 };
 
@@ -34,10 +34,12 @@ type BuilderState = {
     removeFields: (ids: string[]) => void;
     updateWidth: (id: string, width: number) => void;
     addDynamicField: (config: { type: FieldType; text: string; binding?: string }) => void;
+    setFields: (fields: any[]) => void;
 };
 
 export const useBuilderStore = create<BuilderState>((set) => ({
     fields: [],
+    setFields: (fields) => set({ fields }),
     addDynamicField: (config) =>
         set((state) => ({
           fields: [

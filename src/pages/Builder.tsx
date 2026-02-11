@@ -14,6 +14,8 @@ export function BuilderPage() {
     const addText = useBuilderStore((s) => s.addText);
     const addImage = useBuilderStore((s) => s.addImage);
     const addDynamicField = useBuilderStore((s) => s.addDynamicField);
+    const setFields = useBuilderStore((s) => s.setFields);
+
     const saveTemplate = () => {
         const template = {
             fields,
@@ -134,6 +136,9 @@ export function BuilderPage() {
                             addText={addText}
                             addImage={addImage}
                             addDynamicField={addDynamicField}
+                            loadTemplate={(templateFields) => {
+                                setFields(templateFields);
+                            }}
                         />
                         <AlignGroup fields={fields} selectedId={selectedId ?? ''} selectedIds={selectedIds} updatePosition={updatePosition} />
                     </div>
@@ -332,7 +337,11 @@ export function BuilderPage() {
                                                         }}
                                                     />
                                                 ) : (
-                                                    f.text
+                                                    (() => {
+                                                        const displayText =
+                                                            f.text || f.binding || 'Dynamic Field';
+                                                        return displayText;
+                                                    })()
                                                 )}
                                             </div>
                                         )}

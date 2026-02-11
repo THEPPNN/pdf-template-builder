@@ -1,3 +1,5 @@
+import { mockupTemplate } from "../stores/mockupdate";
+
 // addElement.tsx
 type Props = {
     addText: () => void;
@@ -7,6 +9,7 @@ type Props = {
         text: string;
         binding?: string;
     }) => void;
+    loadTemplate: (fields: any[]) => void;
 };
 
 const fields = [
@@ -159,9 +162,11 @@ const fields = [
     }
 ];
 
+const templatePDF1 = mockupTemplate.fields;
+
 // fields if it type text than sent input for text value
 export const AddElement = (
-    { addText, addImage, addDynamicField }: Props) => {
+    { addText, addImage, addDynamicField, loadTemplate }: Props) => {
     return (
         <div>
             <h2 className="font-semibold mb-4">Fields</h2>
@@ -200,16 +205,26 @@ export const AddElement = (
                     key={field.name}
                     onClick={() =>
                         addDynamicField({
-                          type: field.type as any,
-                          text: field.text,
-                          binding: field.binding,
+                            type: field.type as any,
+                            text: field.text,
+                            binding: field.binding,
                         })
-                      }
+                    }
                     className="w-full mb-2 px-3 py-2 bg-gray-200 rounded-lg hover:bg-indigo-600 hover:text-white text-left"
                 >
                     {field.text}
                 </button>
+
+
             ))}
+
+<button
+                onClick={() => loadTemplate(templatePDF1)}
+                className="w-full mb-2 px-3 py-2 bg-indigo-500 rounded-lg hover:bg-indigo-600 text-white text-left"
+            >
+                Load Template 1
+            </button>
+            
         </div>
     );
 };
