@@ -2,20 +2,25 @@ import { create } from 'zustand';
 
 export type TextField = {
     id: string;
+    type: FieldType;
     x: number;
     y: number;
     // text
     text: string;
 
-    // number
-    value?: number;
+    // image
+    src?: string;
 
     fontSize: number;
     fontWeight: 'normal' | 'bold';
     fontFamily: 'sans' | 'serif' | 'mono';
     width: number;
     textAlign: 'left' | 'center' | 'right';
+
+    binding?: string; // เช่น "customer.name" หรือ "invoice.date"
 };
+
+export type FieldType = 'text' | 'image';
 
 type BuilderState = {
     fields: TextField[];
@@ -28,26 +33,48 @@ type BuilderState = {
     ) => void;
     removeFields: (ids: string[]) => void;
     updateWidth: (id: string, width: number) => void;
+    addDynamicField: (config: { type: FieldType; text: string; binding?: string }) => void;
 };
 
 export const useBuilderStore = create<BuilderState>((set) => ({
     fields: [],
-    addNumber: () =>
+    addDynamicField: (config) =>
+        set((state) => ({
+          fields: [
+            ...state.fields,
+            {
+              id: crypto.randomUUID(),
+              type: config.type,
+              text: config.text,
+              binding: config.binding,
+              x: 50,
+              y: 50,
+              width: 150,
+              fontSize: 14,
+              fontWeight: 'normal',
+              textAlign: 'left',
+              fontFamily: 'sans',
+            },
+          ],
+        })),
+    addImage: (src?: string) =>
         set((state) => ({
             fields: [
                 ...state.fields,
                 {
                     id: crypto.randomUUID(),
-                    type: 'number',
+                    type: 'image',
                     x: 100,
                     y: 100,
-                    width: 120,
-                    text: '0',       // ใช้แสดงผล
-                    value: 0,        // ใช้ logic
+                    width: 150,
+                    text: 'Image',
                     fontSize: 14,
                     fontWeight: 'normal',
-                    textAlign: 'right',
                     fontFamily: 'sans',
+                    textAlign: 'left',
+                    src:
+                        src ||
+                        'https://png.pngtree.com/element_our/20190530/ourmid/pngtree-white-spot-float-image_1256405.jpg', // default image
                 },
             ],
         })),
@@ -57,6 +84,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
                 ...state.fields,
                 {
                     id: crypto.randomUUID(),
+                    type: 'text',
                     x: 50,
                     y: 50,
                     text: 'Text',

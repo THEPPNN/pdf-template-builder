@@ -13,6 +13,18 @@ export function BuilderPage() {
     const logout = useAuthStore((s) => s.logout);
     const addText = useBuilderStore((s) => s.addText);
     const addImage = useBuilderStore((s) => s.addImage);
+    const addDynamicField = useBuilderStore((s) => s.addDynamicField);
+    const saveTemplate = () => {
+        const template = {
+            fields,
+            createdAt: new Date().toISOString(),
+        };
+
+        localStorage.setItem('pdf_template_draft', JSON.stringify(template));
+        alert('Template saved successfully');
+        console.log(template);
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/');
@@ -40,6 +52,8 @@ export function BuilderPage() {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (editingId) return;
+
+            // DELETE
             if (
                 (e.key === 'Delete' || e.key === 'Backspace') &&
                 selectedIds.length > 0
@@ -48,11 +62,42 @@ export function BuilderPage() {
                 removeFields(selectedIds);
                 setSelectedIds([]);
                 setSelectedId(null);
+                return;
+            }
+
+            // MOVE WITH ARROW KEYS
+            const moveAmount = e.shiftKey ? 10 : 1;
+
+            if (selectedIds.length > 0) {
+                if (
+                    ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
+                        e.key
+                    )
+                ) {
+                    e.preventDefault();
+
+                    selectedIds.forEach((id) => {
+                        const field = fields.find((f) => f.id === id);
+                        if (!field) return;
+
+                        let newX = field.x;
+                        let newY = field.y;
+
+                        if (e.key === 'ArrowLeft') newX -= moveAmount;
+                        if (e.key === 'ArrowRight') newX += moveAmount;
+                        if (e.key === 'ArrowUp') newY -= moveAmount;
+                        if (e.key === 'ArrowDown') newY += moveAmount;
+
+                        updatePosition(id, newX, newY);
+                    });
+                }
             }
         };
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedIds, editingId]);
+    }, [selectedIds, editingId, fields]);
+
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -62,12 +107,21 @@ export function BuilderPage() {
                     PDF Template Builder
                 </h1>
 
-                <button
-                    onClick={handleLogout}
-                    className="text-sm text-red-500 hover:underline"
-                >
-                    Logout
-                </button>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={saveTemplate}
+                        className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                    >
+                        Save Template
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        className="text-sm text-red-500 hover:underline"
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
 
             {/* Content */}
@@ -76,7 +130,11 @@ export function BuilderPage() {
 
                     {/* Left panel */}
                     <div className="col-span-1 bg-white rounded-xl shadow p-4">
-                        <AddElement addText={addText} addImage={addImage} />
+                        <AddElement
+                            addText={addText}
+                            addImage={addImage}
+                            addDynamicField={addDynamicField}
+                        />
                         <AlignGroup fields={fields} selectedId={selectedId ?? ''} selectedIds={selectedIds} updatePosition={updatePosition} />
                     </div>
 
@@ -96,8 +154,14 @@ export function BuilderPage() {
                                     if (!field) return;
 
                                     const newWidth = Math.max(40, x - field.x);
-                                    updateWidth(resizingId, newWidth);
-                                    return;
+
+                                    if (field.type === 'image') {
+                                        const aspect = field.width / (field.height || 1);
+                                        const newHeight = newWidth / aspect;
+                                        updateWidth(resizingId, newWidth, newHeight);
+                                    } else {
+                                        updateWidth(resizingId, newWidth);
+                                    }
                                 }
 
                                 if (dragId) {
@@ -132,7 +196,7 @@ export function BuilderPage() {
                                     >
                                         {/* Toolbar */}
                                         {/* Floating Toolbar */}
-                                        {selectedId === f.id && !editingId && (
+                                        {selectedId === f.id && !editingId && f.type === 'text' && (
                                             <FloatingToolbar
                                                 field={f}
                                                 onBold={() =>
@@ -170,55 +234,88 @@ export function BuilderPage() {
                                         )}
 
                                         {/* Text box */}
-                                        <div
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                if (editingId) return;
+                                        {f.type === 'image' ? (
+                                            <img
+                                                src={f.src}
+                                                alt=""
+                                                draggable={false}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    setDragId(f.id);
 
-                                                setDragId(f.id);
+                                                    if (e.shiftKey) {
+                                                        setSelectedIds(prev =>
+                                                            prev.includes(f.id)
+                                                                ? prev.filter(id => id !== f.id)
+                                                                : [...prev, f.id]
+                                                        );
+                                                    } else {
+                                                        setSelectedIds([f.id]);
+                                                    }
 
-                                                if (e.shiftKey) {
-                                                    setSelectedIds(prev =>
-                                                        prev.includes(f.id)
-                                                            ? prev.filter(id => id !== f.id)
-                                                            : [...prev, f.id]
-                                                    );
-                                                } else {
-                                                    setSelectedIds([f.id]);
-                                                }
+                                                    setSelectedId(f.id);
+                                                }}
+                                                className={`cursor-move select-none
+      ${isSelected
+                                                        ? 'border border-indigo-500'
+                                                        : 'border border-dashed border-indigo-300'
+                                                    }`}
+                                                style={{
+                                                    width: f.width,
+                                                    height: f.height,
+                                                    objectFit: 'contain',
+                                                }}
+                                            />
+                                        ) : (
+                                            <div
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    if (editingId) return;
 
-                                                setSelectedId(f.id); // ไว้ใช้กับ toolbar single
-                                            }}
-                                            onDoubleClick={(e) => {
-                                                e.stopPropagation();
-                                                setEditingId(f.id);
-                                                setSelectedId(f.id);
-                                            }}
-                                            className={`px-2 py-1 text-sm cursor-move
+                                                    setDragId(f.id);
+
+                                                    if (e.shiftKey) {
+                                                        setSelectedIds(prev =>
+                                                            prev.includes(f.id)
+                                                                ? prev.filter(id => id !== f.id)
+                                                                : [...prev, f.id]
+                                                        );
+                                                    } else {
+                                                        setSelectedIds([f.id]);
+                                                    }
+
+                                                    setSelectedId(f.id); // ไว้ใช้กับ toolbar single
+                                                }}
+                                                onDoubleClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingId(f.id);
+                                                    setSelectedId(f.id);
+                                                }}
+                                                className={`px-2 py-1 text-sm cursor-move
                                          ${editingId === f.id
-                                                    ? 'ring-2 ring-indigo-500 bg-white'
-                                                    : isSelected
-                                                        ? 'border border-indigo-500 bg-indigo-50'
-                                                        : 'border border-dashed border-indigo-300 bg-indigo-50'
-                                                }`}
-                                            style={{
-                                                width: f.width,
-                                                fontSize: f.fontSize,
-                                                fontWeight: f.fontWeight,
-                                                textAlign: f.textAlign,
-                                                fontFamily:
-                                                    f.fontFamily === 'sans'
-                                                        ? 'sans-serif'
-                                                        : f.fontFamily === 'serif'
-                                                            ? 'serif'
-                                                            : 'monospace',
-                                                wordBreak: 'break-word',
-                                            }}
-                                        >
-                                            {editingId === f.id ? (
-                                                <input
-                                                    autoFocus
-                                                    className="
+                                                        ? 'ring-2 ring-indigo-500 bg-white'
+                                                        : isSelected
+                                                            ? 'border border-indigo-500 bg-indigo-50'
+                                                            : 'border border-dashed border-indigo-300 bg-indigo-50'
+                                                    }`}
+                                                style={{
+                                                    width: f.width,
+                                                    fontSize: f.fontSize,
+                                                    fontWeight: f.fontWeight,
+                                                    textAlign: f.textAlign,
+                                                    fontFamily:
+                                                        f.fontFamily === 'sans'
+                                                            ? 'sans-serif'
+                                                            : f.fontFamily === 'serif'
+                                                                ? 'serif'
+                                                                : 'monospace',
+                                                    wordBreak: 'break-word',
+                                                }}
+                                            >
+                                                {editingId === f.id ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="
                         w-full min-w-[80px]
                         bg-white text-gray-800
                         border border-indigo-400
@@ -226,18 +323,19 @@ export function BuilderPage() {
                         outline-none
                         focus:ring-2 focus:ring-indigo-500
                     "
-                                                    value={f.text}
-                                                    onChange={(e) => updateText(f.id, e.target.value)}
-                                                    onBlur={() => setEditingId(null)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') setEditingId(null);
-                                                        if (e.key === 'Escape') setEditingId(null);
-                                                    }}
-                                                />
-                                            ) : (
-                                                f.text
-                                            )}
-                                        </div>
+                                                        value={f.text}
+                                                        onChange={(e) => updateText(f.id, e.target.value)}
+                                                        onBlur={() => setEditingId(null)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') setEditingId(null);
+                                                            if (e.key === 'Escape') setEditingId(null);
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    f.text
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
