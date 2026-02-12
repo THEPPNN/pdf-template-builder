@@ -111,6 +111,14 @@ export function BuilderPage() {
 
                 <div className="flex items-center gap-4">
                     <button
+                        onClick={() => {
+                            window.open('/viewer/template_demo', '_blank');
+                        }}
+                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                    >
+                        Load Template
+                    </button>
+                    <button
                         onClick={saveTemplate}
                         className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
                     >

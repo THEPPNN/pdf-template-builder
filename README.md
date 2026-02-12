@@ -31,7 +31,8 @@ Inspired by tools like Figma, but focused on **PDF layout design**.
 
 ## 📸 Preview
 
-> *(Add screenshots or GIF here later)*
+<!-- Screenshot.png -->
+![All Page](./Screenshot.png)
 
 ```text
 Canvas-based PDF editor

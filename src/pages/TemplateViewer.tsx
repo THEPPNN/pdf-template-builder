@@ -30,8 +30,9 @@ export function TemplateViewer() {
                 // const templateRes = await fetch(`/api/templates/${id}`);
                 // const templateJson = await templateRes.json();
 
-                const templateJson = mockupTemplate;
-
+                // if local storage is not empty then parse it else use mockupTemplate
+                const localStorageTemplate = localStorage.getItem('pdf_template_draft');
+                const templateJson = localStorageTemplate ? JSON.parse(localStorageTemplate) : mockupTemplate;
                 // 🔹 2. โหลดข้อมูลจริงจาก DB
                 // const dataRes = await fetch(`/api/documents/${id}`);
                 // const dataJson = await dataRes.json();
@@ -78,11 +79,10 @@ export function TemplateViewer() {
         }, data);
     };
 
-
     return (
         <div className="min-h-screen bg-gray-100 flex justify-center p-10">
             <div className="relative w-[595px] h-[842px] bg-white shadow">
-
+                <p className="text-gray-500 text-sm text-center mt-2">หมายเหตุ : หากยังไม่มีการสร้าง Template จะใช้ Template ดั้งเดิม</p>
                 {fields.map((f) => (
                     <div
                         key={f.id}
